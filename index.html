@@ -1,1 +1,144 @@
-index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MICER Posters</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.6em;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f2f2f2;
+      text-align: left;
+    }
+
+    .poster-title {
+      font-size: 1.1em;
+      font-weight: bold;
+      margin-bottom: 0.2em;
+      display: block;
+    }
+
+    .poster-abstract {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 0.2em;
+    }
+
+    .person-name {
+      font-weight: bold;
+    }
+
+    .person-email {
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>MICER Posters</h1>
+
+  <table id="posters-table">
+    <thead>
+      <tr>
+        <th>Entry</th>
+        <th>Poster</th>
+        <th>Presenter</th>
+        <th>Affiliation</th>
+        <th>Country</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const dataUrl = "https://raw.githubusercontent.com/chem-ed/MICER26/main/data/data.json";
+
+    // Fetch JSON
+    fetch(dataUrl)
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.querySelector("#posters-table tbody");
+
+        data.forEach(item => {
+          const row = document.createElement("tr");
+
+          // Entry
+          const cellEntry = document.createElement("td");
+          cellEntry.textContent = item.Entry || "";
+          row.appendChild(cellEntry);
+
+          // Poster column
+          const cellPoster = document.createElement("td");
+          const linkPoster = document.createElement("a");
+          linkPoster.href = item.Link_Poster;
+          linkPoster.textContent = item.Poster_Title;
+          linkPoster.className = "poster-title";
+          linkPoster.target = "_blank";
+          cellPoster.appendChild(linkPoster);
+
+          const abstractDiv = document.createElement("div");
+          abstractDiv.textContent = item.Poster_Abstract;
+          abstractDiv.className = "poster-abstract";
+          cellPoster.appendChild(abstractDiv);
+
+          row.appendChild(cellPoster);
+
+          // Presenter
+          const cellPresenter = document.createElement("td");
+          const profileLink = document.createElement("a");
+          profileLink.href = item.Link_Profile;
+          profileLink.textContent = `${item.LastName}, ${item.FirstName}`;
+          profileLink.className = "person-name";
+          profileLink.target = "_blank";
+          cellPresenter.appendChild(profileLink);
+
+          const emailDiv = document.createElement("div");
+          emailDiv.textContent = item.Email;
+          emailDiv.className = "person-email";
+          cellPresenter.appendChild(emailDiv);
+
+          row.appendChild(cellPresenter);
+
+          // Affiliation
+          const cellAffiliation = document.createElement("td");
+          cellAffiliation.textContent = item.Affiliation || "";
+          row.appendChild(cellAffiliation);
+
+          // Country
+          const cellCountry = document.createElement("td");
+          cellCountry.textContent = item.Country || "";
+          row.appendChild(cellCountry);
+
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        console.error("Error loading JSON:", err);
+      });
+  </script>
+
+</body>
+</html>
