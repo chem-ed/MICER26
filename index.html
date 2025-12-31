@@ -1,144 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MICER Posters</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2em;
+    background-color: #f3f4f6;
+    color: #333;
+  }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 1em;
-    }
+  h1 {
+    margin-bottom: 1em;
+    font-size: 2rem;
+  }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1em;
-    }
+  .filter-bar {
+    margin-bottom: 1.5em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1em;
+  }
 
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.6em;
-      vertical-align: top;
-    }
+  .search-input {
+    padding: 10px 14px;
+    font-size: 1rem;
+    width: 260px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
 
-    th {
-      background: #f2f2f2;
-      text-align: left;
-    }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
 
-    .poster-title {
-      font-size: 1.1em;
-      font-weight: bold;
-      margin-bottom: 0.2em;
-      display: block;
-    }
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: top;
+  }
 
-    .poster-abstract {
-      font-size: 0.9em;
-      color: #555;
-      margin-top: 0.2em;
-    }
+  thead th {
+    background-color: #e5e7eb;
+    font-weight: 600;
+    color: #111827;
+    border-bottom: 1px solid #d1d5db;
+    user-select: none;
+    cursor: pointer;
+  }
 
-    .person-name {
-      font-weight: bold;
-    }
+  th.sortable::after {
+    content: ' ⇅';
+    font-size: 0.8em;
+    color: #6b7280;
+    padding-left: 4px;
+  }
 
-    .person-email {
-      font-size: 0.9em;
-      color: #555;
-    }
-  </style>
+  th.sorted-asc::after {
+    content: ' ▲';
+  }
+
+  th.sorted-desc::after {
+    content: ' ▼';
+  }
+
+  tbody tr:hover {
+    background-color: #f9fafb;
+  }
+
+  tbody td {
+    border-top: 1px solid #e5e7eb;
+  }
+
+  td a {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  td a:hover {
+    text-decoration: underline;
+  }
+
+  .description-cell {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.9rem;
+    color: #4b5563;
+  }
+
+  .email {
+    font-size: 0.9rem;
+    color: #4b5563;
+    margin-top: 4px;
+  }
+</style>
 </head>
+
 <body>
+  <h1>MICER Poster Presentations</h1>
 
-  <h1>MICER Posters</h1>
+  <div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input" placeholder="Search all columns..." />
+  </div>
 
-  <table id="posters-table">
-    <thead>
-      <tr>
-        <th>Entry</th>
-        <th>Poster</th>
-        <th>Presenter</th>
-        <th>Affiliation</th>
-        <th>Country</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
+  <table id="posterTable">
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
   </table>
 
-  <script>
-    const dataUrl = "https://raw.githubusercontent.com/chem-ed/MICER26/main/data/data.json";
+<script>
+  let tableData = [];
+  let searchQuery = '';
+  let currentSort = { column: null, direction: 'asc' };
 
-    // Fetch JSON
-    fetch(dataUrl)
-      .then(response => response.json())
-      .then(data => {
-        const tbody = document.querySelector("#posters-table tbody");
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase();
+    renderTable();
+  });
 
-        data.forEach(item => {
-          const row = document.createElement("tr");
+  async function loadData() {
+    const response = await fetch(
+      'https://raw.githubusercontent.com/chem-ed/MICER26/main/data/data.json'
+    );
+    tableData = await response.json();
+    renderTable();
+  }
 
-          // Entry
-          const cellEntry = document.createElement("td");
-          cellEntry.textContent = item.Entry || "";
-          row.appendChild(cellEntry);
+  function renderTable() {
+    const head = document.getElementById('tableHead');
+    const body = document.getElementById('tableBody');
+    head.innerHTML = '';
+    body.innerHTML = '';
 
-          // Poster column
-          const cellPoster = document.createElement("td");
-          const linkPoster = document.createElement("a");
-          linkPoster.href = item.Link_Poster;
-          linkPoster.textContent = item.Poster_Title;
-          linkPoster.className = "poster-title";
-          linkPoster.target = "_blank";
-          cellPoster.appendChild(linkPoster);
+    const columns = [
+      'Entry',
+      'Poster',
+      'Presenter',
+      'Affiliation',
+      'Country'
+    ];
 
-          const abstractDiv = document.createElement("div");
-          abstractDiv.textContent = item.Poster_Abstract;
-          abstractDiv.className = "poster-abstract";
-          cellPoster.appendChild(abstractDiv);
+    const headerRow = document.createElement('tr');
+    columns.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      th.classList.add('sortable');
+      th.onclick = () => sortBy(col);
+      if (currentSort.column === col) {
+        th.classList.remove('sortable');
+        th.classList.add(
+          currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc'
+        );
+      }
+      headerRow.appendChild(th);
+    });
+    head.appendChild(headerRow);
 
-          row.appendChild(cellPoster);
+    let filtered = tableData.filter(row =>
+      Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchQuery)
+      )
+    );
 
-          // Presenter
-          const cellPresenter = document.createElement("td");
-          const profileLink = document.createElement("a");
-          profileLink.href = item.Link_Profile;
-          profileLink.textContent = `${item.LastName}, ${item.FirstName}`;
-          profileLink.className = "person-name";
-          profileLink.target = "_blank";
-          cellPresenter.appendChild(profileLink);
-
-          const emailDiv = document.createElement("div");
-          emailDiv.textContent = item.Email;
-          emailDiv.className = "person-email";
-          cellPresenter.appendChild(emailDiv);
-
-          row.appendChild(cellPresenter);
-
-          // Affiliation
-          const cellAffiliation = document.createElement("td");
-          cellAffiliation.textContent = item.Affiliation || "";
-          row.appendChild(cellAffiliation);
-
-          // Country
-          const cellCountry = document.createElement("td");
-          cellCountry.textContent = item.Country || "";
-          row.appendChild(cellCountry);
-
-          tbody.appendChild(row);
-        });
-      })
-      .catch(err => {
-        console.error("Error loading JSON:", err);
+    if (currentSort.column) {
+      filtered.sort((a, b) => {
+        const valA = getSortValue(a);
+        const valB = getSortValue(b);
+        return currentSort.direction === 'asc'
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
       });
-  </script>
+    }
 
+    filtered.forEach(row => {
+      const tr = document.createElement('tr');
+
+      // Entry
+      tr.appendChild(td(row.Entry));
+
+      // Poster
+      const posterTd = document.createElement('td');
+      const posterLink = document.createElement('a');
+      posterLink.href = row.Link_Poster;
+      posterLink.target = '_blank';
+      posterLink.textContent = row.Poster_Title;
+      posterTd.appendChild(posterLink);
+
+      const abstract = document.createElement('div');
+      abstract.className = 'description-cell';
+      abstract.textContent = row.Poster_Abstract;
+      posterTd.appendChild(abstract);
+      tr.appendChild(posterTd);
+
+      // Presenter
+      const presenterTd = document.createElement('td');
+      const profileLink = document.createElement('a');
+      profileLink.href = row.Link_Profile;
+      profileLink.target = '_blank';
+      profileLink.textContent = `${row.LastName}, ${row.FirstName}`;
+      presenterTd.appendChild(profileLink);
+
+      const email = document.createElement('div');
+      email.className = 'email';
+      email.textContent = row.Email;
+      presenterTd.appendChild(email);
+      tr.appendChild(presenterTd);
+
+      tr.appendChild(td(row.Affiliation));
+      tr.appendChild(td(row.Country));
+
+      body.appendChild(tr);
+    });
+  }
+
+  function td(text) {
+    const td = document.createElement('td');
+    td.textContent = text || '';
+    return td;
+  }
+
+  function sortBy(column) {
+    if (currentSort.column === column) {
+      currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSort.column = column;
+      currentSort.direction = 'asc';
+    }
+    renderTable();
+  }
+
+  function getSortValue(row) {
+    if (currentSort.column === 'Poster') return row.Poster_Title || '';
+    if (currentSort.column === 'Presenter') return row.LastName || '';
+    return row[currentSort.column] || '';
+  }
+
+  loadData();
+</script>
 </body>
 </html>
